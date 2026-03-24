@@ -86,7 +86,8 @@ function defaultAccess(): Access {
   return { dmPolicy: 'pairing', allowFrom: [], pending: {} }
 }
 
-const MAX_CHUNK_LIMIT = 4096
+const MAX_CHUNK_BYTES = 4096 // WeCom markdown limit: 4096 bytes (UTF-8)
+const encoder = new TextEncoder()
 
 function loadAccess(): Access {
   try {
@@ -184,17 +185,25 @@ function gate(senderId: string, chatId: string): GateResult {
 
 // ── Text chunking ────────────────────────────────────────────────────────────
 
-function chunk(text: string, limit: number, mode: 'length' | 'newline'): string[] {
-  if (text.length <= limit) return [text]
+function byteLen(s: string): number {
+  return encoder.encode(s).length
+}
+
+function chunk(text: string, byteLimit: number, mode: 'length' | 'newline'): string[] {
+  if (byteLen(text) <= byteLimit) return [text]
   const out: string[] = []
   let rest = text
-  while (rest.length > limit) {
-    let cut = limit
+  while (byteLen(rest) > byteLimit) {
+    // Estimate char position from byte limit (worst case: 3 bytes/char for CJK)
+    let cut = Math.floor(byteLimit / 3)
+    // Expand cut to use as many chars as possible within byte limit
+    while (cut < rest.length && byteLen(rest.slice(0, cut + 1)) <= byteLimit) cut++
     if (mode === 'newline') {
-      const para = rest.lastIndexOf('\n\n', limit)
-      const line = rest.lastIndexOf('\n', limit)
-      const space = rest.lastIndexOf(' ', limit)
-      cut = para > limit / 2 ? para : line > limit / 2 ? line : space > 0 ? space : limit
+      const para = rest.lastIndexOf('\n\n', cut)
+      const line = rest.lastIndexOf('\n', cut)
+      const space = rest.lastIndexOf(' ', cut)
+      const half = Math.floor(cut / 2)
+      cut = para > half ? para : line > half ? line : space > 0 ? space : cut
     }
     out.push(rest.slice(0, cut))
     rest = rest.slice(cut).replace(/^\n+/, '')
@@ -544,7 +553,7 @@ mcp.setRequestHandler(CallToolRequestSchema, async (req) => {
         const text = args.text as string
 
         const access = loadAccess()
-        const limit = Math.max(1, Math.min(access.textChunkLimit ?? MAX_CHUNK_LIMIT, MAX_CHUNK_LIMIT))
+        const limit = Math.max(1, Math.min(access.textChunkLimit ?? MAX_CHUNK_BYTES, MAX_CHUNK_BYTES))
         const mode = access.chunkMode ?? 'newline'
         const chunks = chunk(text, limit, mode)
 
