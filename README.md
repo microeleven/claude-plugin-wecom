@@ -30,7 +30,17 @@ Enterprise WeChat (企业微信) smart bot channel plugin for [Claude Code](http
 /plugin install wecom@claude-plugin-wecom
 ```
 
-### 3. Configure credentials
+### 3. Enable the channel
+
+Start Claude Code with the channel flag:
+
+```bash
+claude --dangerously-load-development-channels plugin:wecom@claude-plugin-wecom
+```
+
+> **Note:** This flag is required for channel notifications (messages auto-appearing in your session). Without it, you can still use the `get_messages` tool to poll for messages manually.
+
+### 4. Configure credentials
 
 In Claude Code, run:
 
@@ -40,7 +50,7 @@ In Claude Code, run:
 
 Enter your Bot ID and Secret when prompted.
 
-### 4. Pair your WeCom account
+### 5. Pair your WeCom account
 
 Send any message to the bot in WeCom. You'll receive a pairing code. Then in Claude Code:
 
