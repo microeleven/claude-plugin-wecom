@@ -1,0 +1,13 @@
+{
+  "name": "wecom",
+  "description": "WeChat Work (企业微信) smart bot channel for Claude Code — WebSocket bridge with built-in access control.",
+  "version": "0.1.0",
+  "keywords": [
+    "wecom",
+    "wechat-work",
+    "enterprise-wechat",
+    "messaging",
+    "channel",
+    "mcp"
+  ]
+}
